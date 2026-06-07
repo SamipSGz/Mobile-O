@@ -1,0 +1,1108 @@
+{
+  "device": {
+    "chip": "Apple M5",
+    "ram_gb": 17.2,
+    "has_ane": true,
+    "has_mps": true,
+    "has_cuda": false,
+    "has_qnn": false,
+    "has_dla": false,
+    "has_apu": false,
+    "is_rpi": false,
+    "vision_device": "ane",
+    "llm_device": "mps_int4",
+    "diffusion_device": "mps",
+    "dtype": "float16",
+    "async_pipeline": true,
+    "use_coreml": true,
+    "use_gguf": true
+  },
+  "max_tokens": 64,
+  "describe_prompts": [
+    "What is in the image?",
+    "Describe the image in one short sentence.",
+    "What do you see?"
+  ],
+  "describe_images": [
+    "assets/cute_cat.png",
+    "assets/funny_image.jpeg",
+    "assets/app_settings.jpg",
+    "assets/mobile-o-teaser.jpg",
+    "assets/training_figure.jpg"
+  ],
+  "pope_queries": [
+    {
+      "image": "assets/cute_cat.png",
+      "prompt": "Is there a cat in the image?",
+      "expected_yn": "yes",
+      "expected_keywords": [
+        "cat",
+        "kitten",
+        "feline"
+      ]
+    },
+    {
+      "image": "assets/cute_cat.png",
+      "prompt": "Is there a dog in the image?",
+      "expected_yn": "no",
+      "expected_keywords": [
+        "dog",
+        "puppy",
+        "canine"
+      ]
+    },
+    {
+      "image": "assets/cute_cat.png",
+      "prompt": "Are there whiskers in the image?",
+      "expected_yn": "yes",
+      "expected_keywords": [
+        "whisker"
+      ]
+    },
+    {
+      "image": "assets/cute_cat.png",
+      "prompt": "Is there a banana in the image?",
+      "expected_yn": "no",
+      "expected_keywords": [
+        "banana"
+      ]
+    },
+    {
+      "image": "assets/cute_cat.png",
+      "prompt": "Is there an animal in the image?",
+      "expected_yn": "yes",
+      "expected_keywords": [
+        "animal",
+        "cat",
+        "pet"
+      ]
+    },
+    {
+      "image": "assets/funny_image.jpeg",
+      "prompt": "Is there a person in the image?",
+      "expected_yn": null,
+      "expected_keywords": null
+    },
+    {
+      "image": "assets/funny_image.jpeg",
+      "prompt": "Is there a car in the image?",
+      "expected_yn": null,
+      "expected_keywords": null
+    },
+    {
+      "image": "assets/app_settings.jpg",
+      "prompt": "Is there text in the image?",
+      "expected_yn": "yes",
+      "expected_keywords": [
+        "text",
+        "settings",
+        "screen",
+        "interface"
+      ]
+    },
+    {
+      "image": "assets/app_settings.jpg",
+      "prompt": "Is there a horse in the image?",
+      "expected_yn": "no",
+      "expected_keywords": [
+        "horse"
+      ]
+    }
+  ],
+  "results": {
+    "A": [
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 12,
+        "seconds": 1.2740602499980014,
+        "tps": 9.41870684688485,
+        "answer": "The image features a cat staring directly at the camera."
+      },
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 20,
+        "seconds": 1.57803750000312,
+        "tps": 12.673970041878256,
+        "answer": "A cat with a striped coat and white whiskers stands in a room with a blurred background."
+      },
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 20,
+        "seconds": 1.5686358749953797,
+        "tps": 12.74993152892089,
+        "answer": "I see a cat with prominent features like large eyes, whiskers, and a striped pattern."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 20,
+        "seconds": 1.5996587500121677,
+        "tps": 12.502666584262345,
+        "answer": "The image features a meme with two dogs, one with a spear and the other sitting peacefully."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 31,
+        "seconds": 2.181879125011619,
+        "tps": 14.207936473032124,
+        "answer": "The image shows a humorous meme comparing two representations of a Shiba Inu dog, highlighting the evolution from a hunched posture to a muscular build."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 64,
+        "seconds": 3.5752732079999987,
+        "tps": 17.900729895772493,
+        "answer": "The image features a meme with two panels. In the left panel, there is a Shiba Inu dog standing upright with a spear in its paw, and the text \"Humans 100,000 years ago\" above it. The right panel shows another Shiba Inu dog sitting down with the"
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 52,
+        "seconds": 3.0525252500083297,
+        "tps": 17.035076122583458,
+        "answer": "The image displays a smartphone screen with a user interface for a game development tool, specifically the \"DPM-Solver++\" interface, which is a game engine for Unreal Engine. The user interface is focused on adjusting various settings for a game development project."
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 30,
+        "seconds": 2.4208462909882655,
+        "tps": 12.392360519408713,
+        "answer": "The image shows a smartphone interface with settings for a DPM-Solver++ system, detailing parameters such as Inference Steps and Classification-Free Guidance."
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 9,
+        "seconds": 1.102600625003106,
+        "tps": 8.162520314166018,
+        "answer": "You see the settings of a calculator."
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 64,
+        "seconds": 3.358376791002229,
+        "tps": 19.056825360236218,
+        "answer": "The image showcases a comparison of text-to-image generation and visual understanding processes. The left side of the image displays a series of images accompanied by text descriptions, specifically mentioning a tropical rainforest scene, a mountain landscape, and underwater coral reefs. The right side features a scatter plot showing a 3D model of a tomato"
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 51,
+        "seconds": 3.364468832995044,
+        "tps": 15.158410593627016,
+        "answer": "The image depicts a comparison of text-to-image generation processes, comparing the speed and memory usage of different methods like Dreamboots, JanusFlow, and Mobile-OD, using various scenarios such as a tropical rainforest scene and a mountain landscape."
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 7,
+        "seconds": 1.1122641250112792,
+        "tps": 6.293469188291058,
+        "answer": "A detailed illustration of a rainbow"
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 64,
+        "seconds": 3.4661259580025217,
+        "tps": 18.464418424332816,
+        "answer": "The image depicts a flowchart illustrating a training process for a language model that utilizes generative and discriminative techniques. It outlines a sequence of steps involving the use of two different training loss functions, the I2T Loss and T2I Loss, and the corresponding architectures of the auto-regressive language model and the image"
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 48,
+        "seconds": 3.018680958004552,
+        "tps": 15.900984790300459,
+        "answer": "The image illustrates a flowchart of an autoencoder architecture with a combination of static and dynamic components, outlining the process of generating an answer based on a question and an image prompt, and incorporating elements of both frozen and learnable components."
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 23,
+        "seconds": 1.8809978750068694,
+        "tps": 12.227552356972229,
+        "answer": "The diagram depicts a multi-layer neural network architecture used for language generation, illustrating the process from input to output."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a cat in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "cat",
+          "kitten",
+          "feline"
+        ],
+        "tokens": 21,
+        "seconds": 1.6394093340059044,
+        "tps": 12.809491543327011,
+        "answer": "Yes, there is a cat in the image, and it is staring intently at the camera."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a dog in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "dog",
+          "puppy",
+          "canine"
+        ],
+        "tokens": 21,
+        "seconds": 1.7202683340001386,
+        "tps": 12.207397872149816,
+        "answer": "No, there is no dog in the image. The image features a close-up of a cat."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Are there whiskers in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "whisker"
+        ],
+        "tokens": 30,
+        "seconds": 1.970652791991597,
+        "tps": 15.223381877271825,
+        "answer": "Yes, there are whiskers in the image. The cat's whiskers are prominently white and extend from the sides of its mouth and nose."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a banana in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "banana"
+        ],
+        "tokens": 28,
+        "seconds": 1.8636050000059186,
+        "tps": 15.024643097604415,
+        "answer": "No, there is no banana visible in the image. The focus is solely on the cat, with no other objects or subjects present."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there an animal in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "animal",
+          "cat",
+          "pet"
+        ],
+        "tokens": 20,
+        "seconds": 1.5029910419980297,
+        "tps": 13.306799203149355,
+        "answer": "Yes, there is a cat in the image, and it is looking directly at the camera."
+      },
+      {
+        "type": "pope",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Is there a person in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 2,
+        "seconds": 0.6358110419969307,
+        "tps": 3.1455886543248406,
+        "answer": "No"
+      },
+      {
+        "type": "pope",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Is there a car in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 2,
+        "seconds": 0.7089022080035647,
+        "tps": 2.821263606488785,
+        "answer": "No"
+      },
+      {
+        "type": "pope",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Is there text in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "text",
+          "settings",
+          "screen",
+          "interface"
+        ],
+        "tokens": 19,
+        "seconds": 1.5445808329968713,
+        "tps": 12.301071976359612,
+        "answer": "Yes, there is text in the image, specifically at the top that reads 'Settings'."
+      },
+      {
+        "type": "pope",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Is there a horse in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "horse"
+        ],
+        "tokens": 52,
+        "seconds": 2.756612708006287,
+        "tps": 18.86373078415098,
+        "answer": "No, there is no horse present in the image. It is a screenshot of a mobile application interface, focusing on settings related to a scheduling tool, which appears to be for a program or software named 'DPM-Solver+' or 'Custom Scheduler'."
+      }
+    ],
+    "B": [
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 9,
+        "seconds": 1.5030866660090396,
+        "tps": 5.987678690475373,
+        "answer": "There is a cat in the image."
+      },
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 27,
+        "seconds": 1.91621937500895,
+        "tps": 14.090244755965841,
+        "answer": "A close-up image of a cat with large, attentive eyes and a pink nose, showing off its whiskers and striped fur."
+      },
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 10,
+        "seconds": 1.110996832998353,
+        "tps": 9.000925747926793,
+        "answer": "I see a close-up of a cat."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 23,
+        "seconds": 1.762998083999264,
+        "tps": 13.045958591075587,
+        "answer": "The image shows a meme with two dogs, one dressed in a human-like outfit and the other sitting calmly."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 41,
+        "seconds": 2.490475416998379,
+        "tps": 16.46272021805975,
+        "answer": "The meme shows a Shiba Inu dog sitting next to an anthropomorphic version of itself with text that reads \"Humans 100,000 years ago\" and \"Humans today\""
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 29,
+        "seconds": 2.07045187499898,
+        "tps": 14.006604234650121,
+        "answer": "A meme shows a Shiba Inu dog sitting on the right side with a caption that reads, \"Humans today why food delivery slow.\""
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 28,
+        "seconds": 1.9779313750041183,
+        "tps": 14.156203978483177,
+        "answer": "The image displays a mobile phone interface, showing a settings page with options for a DPM-Solver++ timer and a guide scale."
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 38,
+        "seconds": 2.5998079590062844,
+        "tps": 14.616464215504829,
+        "answer": "The image displays a smartphone screen with the settings of a DPM-Solver++ scheduling app, featuring options for Custom Scheduler, Inference Steps, Classifier-Free Guidance, and Guidance Scale."
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 14,
+        "seconds": 1.3812487910035998,
+        "tps": 10.135755478075573,
+        "answer": "You see a smartphone screen displaying the settings of a calculator application."
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 64,
+        "seconds": 3.3931247079890454,
+        "tps": 18.86167043884749,
+        "answer": "The image is a flowchart illustrating the process of converting an image into a text-to-image model. It includes several steps:\n\n1. **Text-to-Image Generation**:\n   - This step involves using text to generate images. The process starts with a text prompt and progresses through several steps.\n   - The text prompts"
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 54,
+        "seconds": 3.2362524999916786,
+        "tps": 16.68596625267616,
+        "answer": "The image compares text-to-image generation results for various prompts, visual prompts, and images, showing the conversion speed of 11 seconds for mobile, 2 seconds for desktop, and 4 seconds for an iPhone, with additional details on speed and memory usage."
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 8,
+        "seconds": 1.1444392079865793,
+        "tps": 6.990323246679448,
+        "answer": "A detailed image of a forest scene"
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 64,
+        "seconds": 3.4787335419969168,
+        "tps": 18.397499902582858,
+        "answer": "The image depicts a flowchart illustrating the process of generating a dialogue response based on a mobile condition, using a language model as the central component. It shows a flow from the input of the I2T Loss to the output of the Dialogue Transformer (DT) model, starting from the mobile conditioning projector and ending at the"
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 40,
+        "seconds": 2.7417164579965174,
+        "tps": 14.589400695807038,
+        "answer": "A flowchart illustrates how the autoregressive language model processes a question, image, and generation prompt to generate an answer, with elements like T2I loss and VAE encoders shown."
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 26,
+        "seconds": 2.0000162920041475,
+        "tps": 12.999894102835679,
+        "answer": "The diagram illustrates the architecture of a generative model for generating text, using a combination of autoencoder and VAE components."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a cat in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "cat",
+          "kitten",
+          "feline"
+        ],
+        "tokens": 11,
+        "seconds": 1.2054650829959428,
+        "tps": 9.125108769357048,
+        "answer": "Yes, there is a cat in the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a dog in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "dog",
+          "puppy",
+          "canine"
+        ],
+        "tokens": 27,
+        "seconds": 2.0220337499922607,
+        "tps": 13.352892848649704,
+        "answer": "No, there is no dog in the image. The image features a close-up of a cat with a focused and curious expression."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Are there whiskers in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "whisker"
+        ],
+        "tokens": 21,
+        "seconds": 1.7513361250021262,
+        "tps": 11.990844989835692,
+        "answer": "Yes, there are whiskers on the cat in the image, extending outwards from its face."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a banana in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "banana"
+        ],
+        "tokens": 30,
+        "seconds": 2.146368874993641,
+        "tps": 13.977094221555408,
+        "answer": "No, there is no banana in the image; instead, it features a close-up of a cat's face with a focused and curious expression."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there an animal in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "animal",
+          "cat",
+          "pet"
+        ],
+        "tokens": 11,
+        "seconds": 1.5876085420022719,
+        "tps": 6.928660125579155,
+        "answer": "Yes, there is a cat in the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Is there a person in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 2,
+        "seconds": 0.7450062499992782,
+        "tps": 2.6845412370727595,
+        "answer": "No"
+      },
+      {
+        "type": "pope",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Is there a car in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 2,
+        "seconds": 0.8044498749950435,
+        "tps": 2.4861710619475486,
+        "answer": "No"
+      },
+      {
+        "type": "pope",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Is there text in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "text",
+          "settings",
+          "screen",
+          "interface"
+        ],
+        "tokens": 2,
+        "seconds": 0.7814649169886252,
+        "tps": 2.5592959536904094,
+        "answer": "Yes"
+      },
+      {
+        "type": "pope",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Is there a horse in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "horse"
+        ],
+        "tokens": 39,
+        "seconds": 2.2763580419996288,
+        "tps": 17.132629964371116,
+        "answer": "No, there is no horse present in the image. The image shows a mobile application interface related to scheduling and guidance, with options for parameters such as Inference Steps and Classifier-Free Guidance."
+      }
+    ],
+    "C": [
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 18,
+        "seconds": 0.2620926249946933,
+        "tps": 68.67801030404596,
+        "answer": "The image contains a wooden floor, a large brown wooden chair, and a yellow chair."
+      },
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 16,
+        "seconds": 0.35860458298702724,
+        "tps": 44.617388508330386,
+        "answer": "A large brown dog is sitting on the sidewalk near a black and white cat."
+      },
+      {
+        "type": "describe",
+        "image": "assets/cute_cat.png",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 19,
+        "seconds": 0.5686242079973454,
+        "tps": 33.41398366931416,
+        "answer": "I see a person standing in a room with a white wall and a red circle on it."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 17,
+        "seconds": 0.4914739169907989,
+        "tps": 34.58983155014158,
+        "answer": "The image depicts a man standing on a brown wooden deck, holding a red skateboard."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 25,
+        "seconds": 0.34223166599986143,
+        "tps": 73.0499322058939,
+        "answer": "The image shows a person holding a camera and a large, black, rectangular object, possibly a phone, in their hand."
+      },
+      {
+        "type": "describe",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 20,
+        "seconds": 0.3498280420026276,
+        "tps": 57.17094571809591,
+        "answer": "I see a person standing in front of a large open field with a few trees in the background."
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 20,
+        "seconds": 0.3333293329924345,
+        "tps": 60.00072007000337,
+        "answer": "A person is standing on a sidewalk near a street corner, wearing a black shirt and dark pants."
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 16,
+        "seconds": 0.3001484169944888,
+        "tps": 53.30696113680914,
+        "answer": "A small black cat is sitting on a wooden table, looking at a picture."
+      },
+      {
+        "type": "describe",
+        "image": "assets/app_settings.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 10,
+        "seconds": 0.24191820800479036,
+        "tps": 41.33628502986424,
+        "answer": "I see a room with a computer on it."
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 20,
+        "seconds": 0.3217642919917125,
+        "tps": 62.15730116042562,
+        "answer": "There is a red and white striped sign with a white arrow on it, located on the sidewalk."
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 19,
+        "seconds": 0.4376034580054693,
+        "tps": 43.4183040659668,
+        "answer": "A dog is running through a field with a blue sky above and a green grassy ground."
+      },
+      {
+        "type": "describe",
+        "image": "assets/mobile-o-teaser.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 12,
+        "seconds": 0.29408670800330583,
+        "tps": 40.80429231730224,
+        "answer": "I see a person holding a book and writing on it."
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "What is in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 12,
+        "seconds": 0.3004066249995958,
+        "tps": 39.94585672009113,
+        "answer": "The image shows a man holding a knife in a kitchen."
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "Describe the image in one short sentence.",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 19,
+        "seconds": 0.3684234579995973,
+        "tps": 51.57109187119341,
+        "answer": "A small white dog is sitting on a red couch with a toy and a remote control nearby."
+      },
+      {
+        "type": "describe",
+        "image": "assets/training_figure.jpg",
+        "prompt": "What do you see?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 21,
+        "seconds": 0.44637612500810064,
+        "tps": 47.04552690764745,
+        "answer": "I'm happy to help! Please provide me with more information or context so I can assist you better."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a cat in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "cat",
+          "kitten",
+          "feline"
+        ],
+        "tokens": 10,
+        "seconds": 0.334686000001966,
+        "tps": 29.878752024109936,
+        "answer": "No, there is no cat in the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a dog in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "dog",
+          "puppy",
+          "canine"
+        ],
+        "tokens": 10,
+        "seconds": 0.3314261249906849,
+        "tps": 30.172636512227456,
+        "answer": "Yes, there is a dog in the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Are there whiskers in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "whisker"
+        ],
+        "tokens": 16,
+        "seconds": 0.3470917090016883,
+        "tps": 46.09732697453218,
+        "answer": "Yes, there are whiskers in the image, specifically on the left side."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there a banana in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "banana"
+        ],
+        "tokens": 10,
+        "seconds": 0.28369529198971577,
+        "tps": 35.249086898356104,
+        "answer": "Yes, there is a banana in the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/cute_cat.png",
+        "prompt": "Is there an animal in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "animal",
+          "cat",
+          "pet"
+        ],
+        "tokens": 10,
+        "seconds": 0.2698867919971235,
+        "tps": 37.05257276949878,
+        "answer": "Yes, there is an animal in the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Is there a person in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 13,
+        "seconds": 0.30821304200799204,
+        "tps": 42.178617476099234,
+        "answer": "Yes, there is a person standing in front of the TV."
+      },
+      {
+        "type": "pope",
+        "image": "assets/funny_image.jpeg",
+        "prompt": "Is there a car in the image?",
+        "expected_yn": null,
+        "expected_keywords": null,
+        "tokens": 10,
+        "seconds": 0.2842338330083294,
+        "tps": 35.182300059637704,
+        "answer": "Yes, there is a car in the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Is there text in the image?",
+        "expected_yn": "yes",
+        "expected_keywords": [
+          "text",
+          "settings",
+          "screen",
+          "interface"
+        ],
+        "tokens": 9,
+        "seconds": 0.30860295800084714,
+        "tps": 29.16368675887836,
+        "answer": "Yes, there is text on the image."
+      },
+      {
+        "type": "pope",
+        "image": "assets/app_settings.jpg",
+        "prompt": "Is there a horse in the image?",
+        "expected_yn": "no",
+        "expected_keywords": [
+          "horse"
+        ],
+        "tokens": 18,
+        "seconds": 0.3838346249976894,
+        "tps": 46.89519607593598,
+        "answer": "Yes, there is a white horse with a red mane and tail present in the image."
+      }
+    ]
+  },
+  "quantitative": {
+    "A": {
+      "n_queries": 24,
+      "total_tokens": 710,
+      "total_seconds": 48.897264707047725,
+      "latency_ms": {
+        "mean": 2.037386029460322,
+        "median": 1.7919366670030286,
+        "stdev": 0.8871464807566235,
+        "min": 0.6358110419969307,
+        "max": 3.5752732079999987
+      },
+      "tokens_per_query": {
+        "mean": 29.583333333333332,
+        "median": 22.0,
+        "stdev": 19.55575455542138,
+        "min": 2,
+        "max": 64
+      },
+      "tps": {
+        "mean": 12.91037198564565,
+        "median": 12.779711536123951,
+        "stdev": 4.419130526961181,
+        "min": 2.821263606488785,
+        "max": 19.056825360236218
+      },
+      "aggregate_tps": 14.52023961368263
+    },
+    "B": {
+      "n_queries": 24,
+      "total_tokens": 620,
+      "total_seconds": 46.12759054196067,
+      "latency_ms": {
+        "mean": 1.9219829392483614,
+        "median": 1.9470753750065342,
+        "stdev": 0.7893734878285493,
+        "min": 0.7450062499992782,
+        "max": 3.4787335419969168
+      },
+      "tokens_per_query": {
+        "mean": 25.833333333333332,
+        "median": 26.5,
+        "stdev": 18.251067072238882,
+        "min": 2,
+        "max": 64
+      },
+      "tps": {
+        "mean": 11.67768957173769,
+        "median": 13.199425719862646,
+        "stdev": 4.944386234151474,
+        "min": 2.4861710619475486,
+        "max": 18.86167043884749
+      },
+      "aggregate_tps": 13.440979524738182
+    },
+    "C": {
+      "n_queries": 24,
+      "total_tokens": 370,
+      "total_seconds": 8.268582040967885,
+      "latency_ms": {
+        "mean": 0.34452425170699524,
+        "median": 0.3323777289915597,
+        "stdev": 0.07616233577574026,
+        "min": 0.24191820800479036,
+        "max": 0.5686242079973454
+      },
+      "tokens_per_query": {
+        "mean": 15.416666666666666,
+        "median": 16.0,
+        "stdev": 4.6054473102551325,
+        "min": 9,
+        "max": 25
+      },
+      "tps": {
+        "mean": 45.12402528268338,
+        "median": 42.79846077103302,
+        "stdev": 12.157439659800021,
+        "min": 29.16368675887836,
+        "max": 73.0499322058939
+      },
+      "aggregate_tps": 44.747696541774815
+    }
+  },
+  "qualitative": {
+    "A": {
+      "pope_accuracy": 1.0,
+      "pope_yes_recall": 1.0,
+      "pope_no_recall": 1.0,
+      "pope_total": 7,
+      "keyword_hit_rate": 1.0,
+      "keyword_total": 7
+    },
+    "B": {
+      "pope_accuracy": 1.0,
+      "pope_yes_recall": 1.0,
+      "pope_no_recall": 1.0,
+      "pope_total": 7,
+      "keyword_hit_rate": 0.8571428571428571,
+      "keyword_total": 7
+    },
+    "C": {
+      "pope_accuracy": 0.42857142857142855,
+      "pope_yes_recall": 0.75,
+      "pope_no_recall": 0.0,
+      "pope_total": 7,
+      "keyword_hit_rate": 1.0,
+      "keyword_total": 7
+    }
+  },
+  "agreement_vs_A": {
+    "B_vs_A": {
+      "exact_match_rate": 0.08333333333333333,
+      "jaccard_mean": 0.3266268650590089,
+      "jaccard_median": 0.21428571428571427,
+      "rouge_l_mean": 0.32611904767995353,
+      "rouge_l_median": 0.26794871794871794,
+      "yn_agreement": 1.0
+    },
+    "C_vs_A": {
+      "exact_match_rate": 0.0,
+      "jaccard_mean": 0.12154432601091528,
+      "jaccard_median": 0.05572755417956656,
+      "rouge_l_mean": 0.17837285733457134,
+      "rouge_l_median": 0.10555555555555557,
+      "yn_agreement": 0.3333333333333333
+    }
+  }
+}
