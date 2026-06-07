@@ -5,6 +5,30 @@ import MLXLMCommon
 import Accelerate
 import Tokenizers
 import Metal
+import OSLog
+
+// MARK: - Signposter for Instruments profiling
+//
+// Filter in Instruments by subsystem: "com.samip.mobileo"
+// Categories: "Generation" (whole pipeline), "Stage" (per stage), "Step" (per DiT step)
+//
+// To profile:
+//   1. Plug in iPhone, open Xcode
+//   2. Product → Profile (⌘I) → choose "Logging" or "Time Profiler" template
+//   3. In Instruments, add an "os_signpost" track filtered to com.samip.mobileo
+//   4. Run a generation; each stage shows up as a colored interval
+let mobileoSignposter = OSSignposter(
+    subsystem: "com.samip.mobileo",
+    category: "Generation"
+)
+let stageSignposter = OSSignposter(
+    subsystem: "com.samip.mobileo",
+    category: "Stage"
+)
+let stepSignposter = OSSignposter(
+    subsystem: "com.samip.mobileo",
+    category: "Step"
+)
 
 /// Common interface for diffusion schedulers (DPM-Solver++, Custom AB-3, etc.).
 protocol DiffusionScheduler {
@@ -202,12 +226,19 @@ public class MobileOGenerator {
 
     /// Hot-swap the diffusion scheduler without reloading transformer or VAE.
     public func loadScheduler(schedulerType: SchedulerType) async throws {
-        guard let bundlePath = Bundle.main.resourcePath else {
-            throw NSError(domain: "MobileOGenerator", code: -1,
-                         userInfo: [NSLocalizedDescriptionKey: "Could not find bundle resource path"])
-        }
+        // Look for scheduler_config.json in model directory first, then bundle
+        let modelDirConfig = modelDirectory.appendingPathComponent("scheduler_config.json").path
+        let bundleConfig   = Bundle.main.path(forResource: "scheduler_config", ofType: "json")
 
-        let configPath = "\(bundlePath)/scheduler_config.json"
+        let configPath: String
+        if FileManager.default.fileExists(atPath: modelDirConfig) {
+            configPath = modelDirConfig
+        } else if let bundlePath = bundleConfig {
+            configPath = bundlePath
+        } else {
+            throw NSError(domain: "MobileOGenerator", code: -1,
+                         userInfo: [NSLocalizedDescriptionKey: "scheduler_config.json not found"])
+        }
 
         switch schedulerType {
         case .dpmSolver:
@@ -221,7 +252,9 @@ public class MobileOGenerator {
 
     private func makeModelConfiguration(variant: ModelVariant) -> MLModelConfiguration {
         let config = MLModelConfiguration()
-        config.computeUnits = .cpuAndGPU
+        // .all lets CoreML route each layer to ANE, GPU, or CPU automatically.
+        // DiT transformer blocks are conv-heavy — ANE gives significant speedup vs GPU-only.
+        config.computeUnits = .all
         config.allowLowPrecisionAccumulationOnGPU = true
         if let device = metalDevice {
             config.preferredMetalDevice = device
@@ -367,6 +400,11 @@ public class MobileOGenerator {
                 currentTimestepArray = try createTimestepArray(t: Int(t))
             }
 
+            // Per-step signpost — see each DiT iteration in Instruments
+            let stepState = stepSignposter.beginInterval("DiT_Step",
+                id: stepSignposter.makeSignpostID(),
+                "step=\(index + 1)/\(numSteps), t=\(Int(t))")
+
             var condNoisePred = try await transformer.predict(
                 latent: currentLatents, timestep: currentTimestepArray!,
                 encoderHiddenStates: encoderHiddenStates, encoderAttentionMask: attentionMask
@@ -395,11 +433,17 @@ public class MobileOGenerator {
             if index + 1 < timesteps.count {
                 currentTimestepArray = try createTimestepArray(t: Int(timesteps[index + 1]))
             }
+
+            stepSignposter.endInterval("DiT_Step", stepState)
         }
 
+        let vaeMarker = stageSignposter.beginInterval("VAE_Decode",
+            id: stageSignposter.makeSignpostID(), "ANE-split p1+p2")
         let vaeStart = Date()
         let finalImage = try await decodeLatents(currentLatents)
         let vaeTime = Date().timeIntervalSince(vaeStart)
+        stageSignposter.endInterval("VAE_Decode", vaeMarker,
+            "took=\(Int(vaeTime * 1000))ms")
         return (result: finalImage, vaeTime: vaeTime)
     }
 
@@ -562,25 +606,49 @@ public class MobileOGenerator {
         encodeHiddenStates: () async throws -> [MLXArray],
         params: PipelineParams
     ) async throws -> (image: MLMultiArray, timing: TimingInfo) {
+        // ── Whole pipeline signpost ──────────────────────────────────────
+        let pipelineState = mobileoSignposter.beginInterval(
+            "Generate", id: mobileoSignposter.makeSignpostID(),
+            "steps=\(params.numSteps), cfg=\(params.enableCFG)"
+        )
+        defer { mobileoSignposter.endInterval("Generate", pipelineState) }
+
         let totalStart = Date()
 
+        // ── Stage 1: LLM (FastVLM hidden states) ─────────────────────────
+        let llmState = stageSignposter.beginInterval("LLM_Forward",
+            id: stageSignposter.makeSignpostID(), "MLX 4-bit on ANE")
         let encodingStart = Date()
         let allHiddenStates = try await encodeHiddenStates()
         let encodingTime = Date().timeIntervalSince(encodingStart)
+        stageSignposter.endInterval("LLM_Forward", llmState,
+            "took=\(Int(encodingTime * 1000))ms")
 
+        // ── Stage 2: Connector (MCP projector) ───────────────────────────
+        let connState = stageSignposter.beginInterval("Connector",
+            id: stageSignposter.makeSignpostID(), "CoreML FP32")
         let connectorStart = Date()
         let (encoderHiddenStates, attentionMask) = try transformToSanaConditioning(allHiddenStates)
         let connectorTime = Date().timeIntervalSince(connectorStart)
+        stageSignposter.endInterval("Connector", connState,
+            "took=\(Int(connectorTime * 1000))ms")
 
         var uncondEncoderHiddenStates: MLMultiArray? = nil
         var uncondAttentionMask: MLMultiArray? = nil
 
         if params.enableCFG {
+            let cfgState = stageSignposter.beginInterval("CFG_Embeddings",
+                id: stageSignposter.makeSignpostID())
             let (uncondEncoded, uncondMask) = try buildCFGEmbeddings(allHiddenStates)
             uncondEncoderHiddenStates = uncondEncoded
             uncondAttentionMask = uncondMask
+            stageSignposter.endInterval("CFG_Embeddings", cfgState)
         }
 
+        // ── Stage 3 + 4: DiT denoise (+ VAE inside denoise) ──────────────
+        let ditState = stageSignposter.beginInterval("DiT_Denoise",
+            id: stageSignposter.makeSignpostID(),
+            "ANE-split p1+p2, \(params.numSteps) steps")
         let diffusionStart = Date()
         let (decodedImage, vaeTime) = try await denoise(
             encoderHiddenStates: encoderHiddenStates,
@@ -594,6 +662,14 @@ public class MobileOGenerator {
             progressCallback: params.progressCallback
         )
         let diffusionTime = Date().timeIntervalSince(diffusionStart) - vaeTime
+        stageSignposter.endInterval("DiT_Denoise", ditState,
+            "took=\(Int(diffusionTime * 1000))ms")
+
+        // VAE timing was already captured inside denoise(); emit its own marker
+        let vaeState = stageSignposter.beginInterval("VAE_Decode_Marker",
+            id: stageSignposter.makeSignpostID(),
+            "VAE took=\(Int(vaeTime * 1000))ms")
+        stageSignposter.endInterval("VAE_Decode_Marker", vaeState)
 
         let timing = TimingInfo(
             tokenizationTime: encodingTime * 0.1,
@@ -603,6 +679,18 @@ public class MobileOGenerator {
             vaeTime: vaeTime,
             totalTime: Date().timeIntervalSince(totalStart)
         )
+
+        // Console log for easy verification without Instruments
+        let logger = Logger(subsystem: "com.samip.mobileo", category: "Timing")
+        logger.notice("""
+        Mobile-O timing (iPhone 17 A19):
+          LLM forward:        \(Int(timing.llmTime * 1000))ms
+          Connector:          \(Int(timing.connectorTime * 1000))ms
+          DiT (\(params.numSteps) steps):    \(Int(timing.diffusionTime * 1000))ms
+          VAE decode:         \(Int(timing.vaeTime * 1000))ms
+          TOTAL:              \(Int(timing.totalTime * 1000))ms
+        """)
+
         return (image: decodedImage, timing: timing)
     }
 }
@@ -717,8 +805,8 @@ extension MobileOGenerator {
 
         static let variants: [ModelVariant: ModelConfiguration] = [
             .fp32: ModelConfiguration(
-                transformerFileName: "transformer.mlmodelc",
-                vaeFileName: "vae_decoder.mlmodelc"
+                transformerFileName: "transformer_ane_p1_0.5.mlmodelc",
+                vaeFileName: "vae_ane_p1_0.5.mlmodelc"
             )
         ]
     }

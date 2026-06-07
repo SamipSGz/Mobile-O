@@ -1,0 +1,233 @@
+{
+  "device": {
+    "chip": "Apple M5",
+    "ram_gb": 17.2,
+    "has_ane": true,
+    "has_mps": true,
+    "has_cuda": false,
+    "has_qnn": false,
+    "has_dla": false,
+    "has_apu": false,
+    "is_rpi": false,
+    "vision_device": "ane",
+    "llm_device": "mps_int4",
+    "diffusion_device": "mps",
+    "dtype": "float16",
+    "async_pipeline": true,
+    "use_coreml": true,
+    "use_gguf": true
+  },
+  "prompt": "What is in the image?",
+  "frames": [
+    "assets/cute_cat.png",
+    "assets/funny_image.jpeg",
+    "assets/mobile-o-teaser.jpg",
+    "assets/mobile-o-qualitative.jpg",
+    "assets/training_figure.jpg",
+    "assets/cute_cat.png",
+    "assets/funny_image.jpeg",
+    "assets/mobile-o-teaser.jpg"
+  ],
+  "warmup": 2,
+  "max_tokens": 64,
+  "results": {
+    "A \u2014 MPS fp16 sequential": {
+      "frames": [
+        {
+          "frame": 0,
+          "tokens": 11,
+          "seconds": 4.729951250003069,
+          "warmup": true,
+          "answer": "The image features a close-up of a cat."
+        },
+        {
+          "frame": 1,
+          "tokens": 23,
+          "seconds": 1.8266466250061058,
+          "warmup": true,
+          "answer": "The image shows two different pictures of dogs. One dog looks extremely fat, and the other dog looks skinny."
+        },
+        {
+          "frame": 2,
+          "tokens": 64,
+          "seconds": 3.69323625000834,
+          "warmup": false,
+          "answer": "The image is a composite of two diagrams related to image manipulation and generation. The upper part of the image shows the process of converting a natural image to a textual prompt using visual cues such as text, colors, and objects from a tropical rainforest scene with a parrot. The lower part of the image shows visual understanding"
+        },
+        {
+          "frame": 3,
+          "tokens": 56,
+          "seconds": 3.1837069160101237,
+          "warmup": false,
+          "answer": "The image contains a sequence of responses to a question about a book titled \"The Book from 'The New York Times' by H.R. Giger.\" The image shows the text responses, with some images and text added, to illustrate a sequence of responses to the question."
+        },
+        {
+          "frame": 4,
+          "tokens": 51,
+          "seconds": 2.9985519999900134,
+          "warmup": false,
+          "answer": "The image depicts an architecture diagram of a hybrid approach for generating and evaluating machine translation models. It includes components such as an autoresgressive language model, a mobile-conditioning projector, an embedding layer, an image encoder, and a VAE encoder."
+        },
+        {
+          "frame": 5,
+          "tokens": 14,
+          "seconds": 1.812931166990893,
+          "warmup": false,
+          "answer": "The image features a cat, prominently showcasing its head and face."
+        },
+        {
+          "frame": 6,
+          "tokens": 29,
+          "seconds": 1.806993666003109,
+          "warmup": false,
+          "answer": "The image features two dogs, one standing and the other sitting, with captions suggesting a humorous comparison between humans and shih tzus."
+        },
+        {
+          "frame": 7,
+          "tokens": 47,
+          "seconds": 2.7287747079972178,
+          "warmup": false,
+          "answer": "The image depicts a diagram that illustrates the process of text-to-image generation. It shows the steps involved in converting a text prompt into an image with specific visual and audio-related characteristics, displayed on two different devices: iPad and MacBook."
+        }
+      ],
+      "measured_count": 6,
+      "total_tokens": 261,
+      "measured_wall": 16.43595254200045,
+      "aggregate_tps": 15.879821953308781,
+      "frames_per_sec": 0.3650533782369835,
+      "per_frame_median_seconds": 2.8636633539936156
+    },
+    "B \u2014 ANE+MPS async pipeline": {
+      "frames": [
+        {
+          "frame": 0,
+          "tokens": 9,
+          "seconds": 1.9498620410013245,
+          "warmup": true,
+          "answer": "There is a cat in the image."
+        },
+        {
+          "frame": 1,
+          "tokens": 18,
+          "seconds": 3.2462270410032943,
+          "warmup": true,
+          "answer": "There is a meme in the image showing two dogs with text describing their current situations."
+        },
+        {
+          "frame": 2,
+          "tokens": 56,
+          "seconds": 6.294357791994116,
+          "warmup": false,
+          "answer": "The image depicts a flowchart that illustrates the process of generating an image from a text prompt, using machine learning techniques to create various visual and text descriptions. The flowchart is divided into three main sections, each showing a different interaction between the text and the image generation process."
+        },
+        {
+          "frame": 3,
+          "tokens": 20,
+          "seconds": 8.14408379199449,
+          "warmup": false,
+          "answer": "The image contains a series of prompts related to different topics, each accompanied by a corresponding image."
+        },
+        {
+          "frame": 4,
+          "tokens": 64,
+          "seconds": 10.71926016699581,
+          "warmup": false,
+          "answer": "The image depicts a diagram for a flowchart illustrating the process of generating answers to unseen questions using a language model. The process starts with a question, followed by an embedding layer, an automatic language model, and an image encoder. The image is generated by a VAE (Variational Autoencoder), which is used to"
+        },
+        {
+          "frame": 5,
+          "tokens": 17,
+          "seconds": 11.05943937500706,
+          "warmup": false,
+          "answer": "The image features a cat with a focused expression, looking directly at the camera."
+        },
+        {
+          "frame": 6,
+          "tokens": 10,
+          "seconds": 8.914640041999519,
+          "warmup": false,
+          "answer": "There is a wolf image in the image."
+        },
+        {
+          "frame": 7,
+          "tokens": 46,
+          "seconds": 9.391640832996927,
+          "warmup": false,
+          "answer": "The image displays a diagram comparing the text-to-image generation process for various visual prompts, including landscapes, a bird, and other objects. It includes detailed steps and visualizations showing the transformation process from raw text to relevant images."
+        }
+      ],
+      "measured_count": 6,
+      "total_tokens": 213,
+      "measured_wall": 12.8980201259983,
+      "aggregate_tps": 16.514162477592965,
+      "frames_per_sec": 0.4651876754251539,
+      "per_frame_median_seconds": 9.153140437498223
+    },
+    "C \u2014 ANE+INT4 async pipeline": {
+      "frames": [
+        {
+          "frame": 0,
+          "tokens": 8,
+          "seconds": 0.6390532920049736,
+          "warmup": true,
+          "answer": "A wooden table with a book on top"
+        },
+        {
+          "frame": 1,
+          "tokens": 13,
+          "seconds": 0.6944910830061417,
+          "warmup": true,
+          "answer": "The image is a photo of a yellow flower with green leaves."
+        },
+        {
+          "frame": 2,
+          "tokens": 20,
+          "seconds": 0.8544037500105333,
+          "warmup": false,
+          "answer": "The image is a photograph of a white brick wall with a green and orange sign attached to it."
+        },
+        {
+          "frame": 3,
+          "tokens": 16,
+          "seconds": 0.9579092079948168,
+          "warmup": false,
+          "answer": "There is a large white building in the background with a few trees in front."
+        },
+        {
+          "frame": 4,
+          "tokens": 31,
+          "seconds": 1.1238530000118772,
+          "warmup": false,
+          "answer": "The image features a man wearing a blue and white striped shirt, a black belt with a silver buckle, and black shoes. He is wearing white socks."
+        },
+        {
+          "frame": 5,
+          "tokens": 20,
+          "seconds": 1.076109292000183,
+          "warmup": false,
+          "answer": "A man in a black shirt and blue pants is sitting on a white chair with his arms crossed."
+        },
+        {
+          "frame": 6,
+          "tokens": 14,
+          "seconds": 0.8801204159972258,
+          "warmup": false,
+          "answer": "A black and white image of a dog standing next to a wall."
+        },
+        {
+          "frame": 7,
+          "tokens": 16,
+          "seconds": 0.7677061249996768,
+          "warmup": false,
+          "answer": "It is a picture of a man and a woman walking through a city street."
+        }
+      ],
+      "measured_count": 6,
+      "total_tokens": 117,
+      "measured_wall": 0.8202710419864161,
+      "aggregate_tps": 142.63578014002053,
+      "frames_per_sec": 7.314655391795925,
+      "per_frame_median_seconds": 0.9190148119960213
+    }
+  }
+}

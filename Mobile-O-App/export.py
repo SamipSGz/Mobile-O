@@ -81,6 +81,50 @@ def trace_and_freeze(module, example_inputs):
         traced = torch.jit.trace(module, example_inputs, strict=False)
     return torch.jit.freeze(traced)
 
+def register_int_converter():
+    """
+    Monkey-patch coremltools' _cast so aten::Int works on non-scalar tensors.
+    The DiT transformer has attention ops where int() is called on dynamic
+    tensor dims (e.g. height*width). CoreML's default _cast raises on these.
+    We patch it to fall through to a cast op instead of raising.
+    """
+    if getattr(register_int_converter, "_done", False):
+        return
+    register_int_converter._done = True
+
+    import coremltools.converters.mil.frontend.torch.ops as _torch_ops
+    import numpy as _np
+
+    _original_cast = _torch_ops._cast
+
+    def _patched_cast(context, node, dtype, dtype_name):
+        from coremltools.converters.mil.frontend.torch.ops import _get_inputs
+        from coremltools.converters.mil import Builder as mb
+        inputs = _get_inputs(context, node, expected=1)
+        x = inputs[0]
+        # Non-scalar, multi-element constant (e.g. height*width from DiT attention)
+        # The default path tries dtype(x.val) which fails on nd-arrays.
+        # Route through mb.cast instead.
+        if x.val is not None and _np.ndim(x.val) > 0 and _np.size(x.val) > 1:
+            res = mb.cast(x=x, dtype=dtype_name, name=node.name)
+            context.add(res, node.name)
+            return
+        # Scalar constant — safe to call dtype(x.val)
+        if x.val is not None and _np.ndim(x.val) == 0:
+            try:
+                res = mb.const(val=dtype(x.val), name=node.name)
+                context.add(res, node.name)
+                return
+            except (TypeError, ValueError):
+                res = mb.cast(x=x, dtype=dtype_name, name=node.name)
+                context.add(res, node.name)
+                return
+        # dynamic / non-const — original path
+        _original_cast(context, node, dtype, dtype_name)
+
+    _torch_ops._cast = _patched_cast
+
+
 def register_movedim_converter():
     """Register torch.movedim → CoreML transpose (needed by VAE)."""
     if getattr(register_movedim_converter, "_done", False):
@@ -150,6 +194,8 @@ class ConnectorWrapper(torch.nn.Module):
 def export_dit(model, output_dir: Path):
     """Export DiT transformer to CoreML FP32."""
     print("\n--- DiT Transformer (CoreML FP32) ---")
+    register_int_converter()
+    register_movedim_converter()
 
     dit = model.model.dit.to(torch.float32).eval().cpu()
 

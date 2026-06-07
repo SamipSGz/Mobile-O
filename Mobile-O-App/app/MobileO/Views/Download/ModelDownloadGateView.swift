@@ -25,6 +25,32 @@ struct ModelDownloadGateView: View {
     }
 }
 
+// MARK: - Bundle Compile View (shown when models are bundled, no download needed)
+
+private struct BundleCompileView: View {
+    var body: some View {
+        VStack(spacing: 28) {
+            Spacer()
+            Image(systemName: "cpu.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.purple)
+            Text("Preparing Models")
+                .font(.system(size: 26, weight: .bold, design: .rounded))
+            Text("Compiling on-device for your chip.\nThis takes a few minutes — only happens once.")
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            ProgressView()
+                .scaleEffect(1.4)
+                .tint(.purple)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+
 // MARK: - Error View
 
 private struct DownloadErrorView: View {

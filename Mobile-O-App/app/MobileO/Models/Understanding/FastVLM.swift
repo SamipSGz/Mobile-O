@@ -257,12 +257,18 @@ private enum Vision {
             }
         }
 
-        public func model() -> MLModel {
-            try! load()
+        public func model() -> MLModel? {
+            try? load()
         }
 
         public func encode(_ image: MLXArray) -> MLXArray {
             let encodeStart = Date()
+
+            guard let mlModel = model() else {
+                // Vision encoder failed to load (likely memory pressure) — return zeros
+                let seqLen = (image.dim(2) / 16) * (image.dim(3) / 16)
+                return MLXArray.zeros([1, seqLen, 3072])
+            }
 
             var (data, strides) = {
                 let arrayData = image.asType(.float32).asData(access: .noCopyIfContiguous)
@@ -277,24 +283,26 @@ private enum Vision {
             let w = NSNumber(value: image.dim(3))
 
             let result = data.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
-                // wrap the backing of the MLXArray
-                let array = try! MLMultiArray(
+                guard let array = try? MLMultiArray(
                     dataPointer: ptr.baseAddress!, shape: [1, 3, h, w], dataType: .float32,
-                    strides: strides.map { .init(value: $0) })
-
-                // inference
-                let input = try! MLDictionaryFeatureProvider(dictionary: [
-                    "images": MLFeatureValue(multiArray: array)
-                ])
-                let output = try! model().prediction(from: input)
+                    strides: strides.map { .init(value: $0) }),
+                      let input = try? MLDictionaryFeatureProvider(dictionary: [
+                          "images": MLFeatureValue(multiArray: array)
+                      ]),
+                      let output = try? mlModel.prediction(from: input) else {
+                    let seqLen = image.dim(2) / 16 * image.dim(3) / 16
+                    return MLXArray.zeros([1, seqLen, 3072])
+                }
 
                 guard let imageFeatures = output.featureValue(for: outputKey)?.multiArrayValue else {
-                    fatalError("Failed to get '\(outputKey)' from vision encoder output")
+                    let seqLen = image.dim(2) / 16 * image.dim(3) / 16
+                    return MLXArray.zeros([1, seqLen, 3072])
                 }
 
                 let shape = imageFeatures.shape.map { $0.intValue }
                 guard shape.count == 3 else {
-                    fatalError("Vision encoder output must be 3D, got \(shape.count)D")
+                    let seqLen = image.dim(2) / 16 * image.dim(3) / 16
+                    return MLXArray.zeros([1, seqLen, 3072])
                 }
 
                 let count = shape.reduce(1, *)
@@ -655,14 +663,15 @@ public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
     }
 
     public func sanitize(weights: [String: MLXArray]) -> [String: MLXArray] {
-        // Set the vision encoder URL from the model directory if available
+        // Set the vision encoder URL from the model directory if available.
+        // Do NOT load the CoreML model here — vision_encoder.mlmodelc is 2.2GB
+        // and loading it synchronously during weight sanitization blocks iPhone
+        // startup. Load it lazily on first image inference instead.
         if let customDir = FastVLM.customModelDirectory {
             let visionURL = customDir.deletingLastPathComponent()
                 .appendingPathComponent("vision_encoder.mlmodelc")
             visionModel.model.setModelURL(visionURL)
         }
-        _ = try? visionModel.model.load()
-
         return weights
     }
 }

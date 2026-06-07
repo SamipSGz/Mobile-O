@@ -19,6 +19,7 @@ class MobileOModel {
     public var generationTime: String = ""
 
     public var inferenceTime: TimeInterval = 0
+    public var lastTiming: MobileOGenerator.TimingInfo? = nil
     public var currentStep: Int = 0
     public var totalSteps: Int = 0
     public let modelVariant: MobileOGenerator.ModelVariant = .fp32
@@ -200,6 +201,7 @@ class MobileOModel {
                 await MainActor.run {
                     self.generationTime = String(format: "%.1f seconds", elapsed)
                     self.inferenceTime = timing.totalTime
+                    self.lastTiming = timing
                     self.resetState()
                 }
 

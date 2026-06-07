@@ -1,0 +1,132 @@
+{
+  "device": {
+    "chip": "Apple M5",
+    "ram_gb": 17.2,
+    "has_ane": true,
+    "has_mps": true,
+    "has_cuda": false,
+    "has_qnn": false,
+    "has_dla": false,
+    "has_apu": false,
+    "is_rpi": false,
+    "vision_device": "ane",
+    "llm_device": "mps_int4",
+    "diffusion_device": "mps",
+    "dtype": "float16",
+    "async_pipeline": true,
+    "use_coreml": true,
+    "use_gguf": true
+  },
+  "prompt": "What is in the image?",
+  "image": "assets/cute_cat.png",
+  "max_tokens": 128,
+  "warmup": 1,
+  "runs": 5,
+  "results": {
+    "A \u2014 MPS fp16 sequential": {
+      "runs": [
+        {
+          "tokens": 7,
+          "seconds": 0.845796416993835,
+          "tps": 8.276223284179535
+        },
+        {
+          "tokens": 11,
+          "seconds": 1.050429124996299,
+          "tps": 10.471910706054306
+        },
+        {
+          "tokens": 17,
+          "seconds": 1.1977998330112314,
+          "tps": 14.192688570729327
+        },
+        {
+          "tokens": 12,
+          "seconds": 1.0301445840013912,
+          "tps": 11.648850254969446
+        },
+        {
+          "tokens": 7,
+          "seconds": 0.781748166991747,
+          "tps": 8.954290263240106
+        }
+      ],
+      "median_tokens": 11,
+      "median_seconds": 1.0301445840013912,
+      "median_tps": 10.471910706054306,
+      "mean_tps": 10.708792615834543,
+      "stdev_tps": 2.3490968736504443,
+      "last_answer": "The image features a cat."
+    },
+    "B \u2014 ANE vision + MPS LLM": {
+      "runs": [
+        {
+          "tokens": 17,
+          "seconds": 1.336391624994576,
+          "tps": 12.720822012087211
+        },
+        {
+          "tokens": 15,
+          "seconds": 1.2608362500031944,
+          "tps": 11.896866068025881
+        },
+        {
+          "tokens": 16,
+          "seconds": 1.2668874579976546,
+          "tps": 12.629377533887956
+        },
+        {
+          "tokens": 9,
+          "seconds": 1.1158284580014879,
+          "tps": 8.065755928218135
+        },
+        {
+          "tokens": 7,
+          "seconds": 0.9067282500036526,
+          "tps": 7.720063866954406
+        }
+      ],
+      "median_tokens": 15,
+      "median_seconds": 1.2608362500031944,
+      "median_tps": 11.896866068025881,
+      "mean_tps": 10.606577081834718,
+      "stdev_tps": 2.5007163791679554,
+      "last_answer": "The image contains a cat."
+    },
+    "C \u2014 ANE vision + INT4 Metal LLM": {
+      "runs": [
+        {
+          "tokens": 13,
+          "seconds": 0.20663512499595527,
+          "tps": 62.912827624318304
+        },
+        {
+          "tokens": 20,
+          "seconds": 0.2448684580012923,
+          "tps": 81.67650567675176
+        },
+        {
+          "tokens": 16,
+          "seconds": 0.23911404199316166,
+          "tps": 66.91367795312321
+        },
+        {
+          "tokens": 31,
+          "seconds": 0.33149508300994057,
+          "tps": 93.51571588490319
+        },
+        {
+          "tokens": 20,
+          "seconds": 0.2635535000008531,
+          "tps": 75.88592069517294
+        }
+      ],
+      "median_tokens": 20,
+      "median_seconds": 0.2448684580012923,
+      "median_tps": 75.88592069517294,
+      "mean_tps": 76.18092956685388,
+      "stdev_tps": 12.172794310841187,
+      "last_answer": "A man in a black shirt and blue pants is sitting on a white chair with his arms crossed."
+    }
+  }
+}

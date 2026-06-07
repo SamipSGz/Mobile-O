@@ -71,13 +71,12 @@ class SEBlock(nn.Module):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """Apply forward pass."""
-        b, c, h, w = inputs.size()
-        x = F.avg_pool2d(inputs, kernel_size=[h, w])
+        # Use adaptive_avg_pool2d(1) — static output size, CoreML/ANE compatible
+        x = F.adaptive_avg_pool2d(inputs, 1)
         x = self.reduce(x)
         x = F.relu(x)
         x = self.expand(x)
         x = torch.sigmoid(x)
-        x = x.view(-1, c, 1, 1)
         return inputs * x
 
 
@@ -660,27 +659,27 @@ class MHSA(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         shape = x.shape
-        B, C, H, W = shape
-        N = H * W
-        if len(shape) == 4:
+        is_4d = len(shape) == 4
+        if is_4d:
+            B, C, H, W = shape
             x = torch.flatten(x, start_dim=2).transpose(-2, -1)  # (B, N, C)
+        # Use x.shape[1] (N) dynamically-safe via tensor ops, not Python int
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, self.head_dim)
+            .unflatten(-1, (3, self.num_heads, self.head_dim))
             .permute(2, 0, 3, 1, 4)
         )
-        q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
+        q, k, v = qkv.unbind(0)
 
-        # trick here to make q@k.t more stable
         attn = (q * self.scale) @ k.transpose(-2, -1)
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
-        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).flatten(2)  # (B, N, C)
         x = self.proj(x)
         x = self.proj_drop(x)
-        if len(shape) == 4:
-            x = x.transpose(-2, -1).reshape(B, C, H, W)
+        if is_4d:
+            x = x.transpose(-2, -1).unflatten(-1, (H, W))  # (B, C, H, W)
 
         return x
 

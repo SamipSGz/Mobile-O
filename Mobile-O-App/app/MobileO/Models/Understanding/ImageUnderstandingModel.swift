@@ -4,9 +4,16 @@ import MLXNN
 import MLXLMCommon
 import Tokenizers
 import MLXVLM
+import OSLog
 
 import UIKit
 import CoreImage.CIFilterBuiltins
+
+/// Signposters for understanding pipeline — visible in Instruments
+private let understandingSignposter = OSSignposter(
+    subsystem: "com.samip.mobileo", category: "Understanding")
+private let understandingStageSignposter = OSSignposter(
+    subsystem: "com.samip.mobileo", category: "UnderstandingStage")
 
 /// Observable wrapper for FastVLM image understanding inference
 @Observable
@@ -20,6 +27,8 @@ class ImageUnderstandingModel {
     public var totalTime: TimeInterval = 0
     public var tokensGenerated: Int = 0
     public var visionEncoderTime: TimeInterval = 0
+    public var prepareTime: TimeInterval = 0
+    public var llmGenerateTime: TimeInterval = 0
 
     private var container: ModelContainer?
     private var currentTask: Task<String, Never>?
@@ -55,6 +64,11 @@ class ImageUnderstandingModel {
             )
             defer { ProcessInfo.processInfo.endActivity(activity) }
 
+            // ── Whole understanding pipeline signpost ─────────────────
+            let pipelineState = understandingSignposter.beginInterval(
+                "Understand", id: understandingSignposter.makeSignpostID())
+            defer { understandingSignposter.endInterval("Understand", pipelineState) }
+
             do {
                 let container = await self.container
                 guard let container = container else {
@@ -74,6 +88,8 @@ class ImageUnderstandingModel {
 
                 var fullResponse = ""
                 var processedTokenCount = 0
+                var prepareDuration: TimeInterval = 0
+                var llmGenDuration: TimeInterval = 0
 
                 try await container.perform { context in
                     guard let processor = context.processor as? UserInputProcessor else {
@@ -81,8 +97,23 @@ class ImageUnderstandingModel {
                                      userInfo: [NSLocalizedDescriptionKey: "Invalid processor type"])
                     }
 
+                    // ── Stage 1: Input prep (includes image encoding via FastVLM CoreML) ──
+                    let prepState = understandingStageSignposter.beginInterval(
+                        "Prepare_Input",
+                        id: understandingStageSignposter.makeSignpostID(),
+                        "vision encode + tokenize")
+                    let prepStart = Date()
                     let preparedInput = try await processor.prepare(input: userInput)
+                    prepareDuration = Date().timeIntervalSince(prepStart)
+                    understandingStageSignposter.endInterval("Prepare_Input", prepState,
+                        "took=\(Int(prepareDuration * 1000))ms")
 
+                    // ── Stage 2: LLM token generation (MLX on ANE) ──
+                    let llmState = understandingStageSignposter.beginInterval(
+                        "LLM_Generate",
+                        id: understandingStageSignposter.makeSignpostID(),
+                        "MLX 4-bit autoregressive")
+                    let llmStart = Date()
                     let result = try MLXLMCommon.generate(
                         input: preparedInput,
                         parameters: GenerateParameters(temperature: 0.6),
@@ -112,19 +143,39 @@ class ImageUnderstandingModel {
                     }
 
                     fullResponse = result.output
+                    llmGenDuration = Date().timeIntervalSince(llmStart)
+                    understandingStageSignposter.endInterval("LLM_Generate", llmState,
+                        "took=\(Int(llmGenDuration * 1000))ms, tokens=\(processedTokenCount)")
                 }
 
-                // Capture vision encoder timing
+                // Capture vision encoder timing (separately tracked inside FastVLM)
+                var visionTime: TimeInterval = 0
                 try await container.perform { context in
                     if let fastVLM = context.model as? FastVLM {
-                        let visionTime = fastVLM.getVisionEncoderTime()
+                        visionTime = fastVLM.getVisionEncoderTime()
                         await MainActor.run { self.visionEncoderTime = visionTime }
                     }
                 }
 
+                let capturedStart: Date? = await MainActor.run { self.startTime }
+                let totalDuration: TimeInterval = (capturedStart.map { Date().timeIntervalSince($0) })
+                    ?? (prepareDuration + llmGenDuration)
+
+                // Console log for paper measurements
+                let logger = Logger(subsystem: "com.samip.mobileo", category: "Timing")
+                logger.notice("""
+                Mobile-O UNDERSTANDING timing (iPhone 17 A19):
+                  Input prepare (incl. vision encode):  \(Int(prepareDuration * 1000))ms
+                    └─ Vision encoder (CoreML/ANE):     \(Int(visionTime * 1000))ms
+                  LLM generate (\(processedTokenCount) tokens):   \(Int(llmGenDuration * 1000))ms
+                  TOTAL:                                \(Int(totalDuration * 1000))ms
+                """)
+
                 await MainActor.run {
                     if !Task.isCancelled { self.response = fullResponse }
-                    if let start = self.startTime { self.totalTime = Date().timeIntervalSince(start) }
+                    self.totalTime = totalDuration
+                    self.prepareTime = prepareDuration
+                    self.llmGenerateTime = llmGenDuration
                     self.running = false
                 }
 

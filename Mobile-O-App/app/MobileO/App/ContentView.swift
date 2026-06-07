@@ -32,6 +32,7 @@ struct ContentView: View {
 
     // MARK: - UI State
 
+    @State private var loadingStage = ""
     @State private var prompt = ""
     @State private var selectedImage: PlatformImage?
     @State private var photoPickerItem: PhotosPickerItem?
@@ -61,7 +62,7 @@ struct ContentView: View {
             .navigationTitle("Mobile-O")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarItems }
-            .overlay { if modelsLoading { LoadingOverlay() } }
+            .overlay { if modelsLoading { LoadingOverlay(loadingStage: loadingStage) } }
             .disabled(modelsLoading)
             .alert("Invalid Prompt", isPresented: $showValidationError) {
                 Button("OK", role: .cancel) {}
@@ -158,11 +159,17 @@ struct ContentView: View {
         do {
             let llmDirectory = modelDirectory.appendingPathComponent("llm")
 
-            // Copy bundled preprocessor_config.json into the downloaded llm/ directory if missing
+            // Copy bundled config files into the downloaded directories if missing
             let preprocDest = llmDirectory.appendingPathComponent("preprocessor_config.json")
             if !FileManager.default.fileExists(atPath: preprocDest.path),
                let bundled = Bundle.main.url(forResource: "preprocessor_config", withExtension: "json") {
                 try? FileManager.default.copyItem(at: bundled, to: preprocDest)
+            }
+            // Copy scheduler_config.json to model root so MobileOGenerator can find it
+            let schedulerDest = modelDirectory.appendingPathComponent("scheduler_config.json")
+            if !FileManager.default.fileExists(atPath: schedulerDest.path),
+               let bundled = Bundle.main.url(forResource: "scheduler_config", withExtension: "json") {
+                try? FileManager.default.copyItem(at: bundled, to: schedulerDest)
             }
 
             let config = ModelConfiguration(directory: llmDirectory)
@@ -170,11 +177,47 @@ struct ContentView: View {
             // Point FastVLM to the downloaded model directory for config + vision encoder
             FastVLM.customModelDirectory = llmDirectory
 
+            await MainActor.run { loadingStage = "Step 1: Registering model..." }
             FastVLM.register(modelFactory: VLMModelFactory.shared)
 
-            let container = try await VLMModelFactory.shared.loadContainer(configuration: config) { progress in
-                Task { @MainActor in print("Loading FastVLM: \(Int(progress.fractionCompleted * 100))%") }
+            await MainActor.run { loadingStage = "Step 2: Loading config..." }
+            // Small delay so the UI updates before the next blocking call
+            try? await Task.sleep(nanoseconds: 100_000_000)
+
+            await MainActor.run { loadingStage = "Loading MLX weights — please wait..." }
+
+            // Ticker runs on a completely detached thread independent of model loading
+            let startTime = Date()
+            let ticker = Task.detached(priority: .background) {
+                while !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                    let elapsed = Int(Date().timeIntervalSince(startTime))
+                    await MainActor.run {
+                        loadingStage = "Loading MLX weights... \(elapsed)s"
+                    }
+                }
             }
+
+            // Load on detached high-priority thread
+            let container: ModelContainer
+            do {
+                container = try await Task.detached(priority: .userInitiated) {
+                    try await VLMModelFactory.shared.loadContainer(configuration: config) { progress in
+                        let pct = Int(progress.fractionCompleted * 100)
+                        Task { @MainActor in
+                            loadingStage = "MLX weights: \(pct)%"
+                        }
+                    }
+                }.value
+            } catch {
+                ticker.cancel()
+                await MainActor.run { loadingStage = "Error: \(error.localizedDescription)" }
+                // Wait 3s so user can read the error, then rethrow
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                throw error
+            }
+
+            ticker.cancel()
 
             // Extract the FastVLM instance and tokenizer from the loaded container
             var loadedVLM: FastVLM?
@@ -198,9 +241,11 @@ struct ContentView: View {
             sharedFastVLM = fastVLM
             sharedTokenizer = tokenizer
 
+            await MainActor.run { loadingStage = "Warming up vision encoder..." }
             // Warmup on a background thread to avoid blocking the UI
             await Task.detached(priority: .userInitiated) { fastVLM.warmup() }.value
 
+            await MainActor.run { loadingStage = "Loading DiT transformer + VAE..." }
             // Create and load the three sub-models sharing a single FastVLM backbone
             let generateModel = MobileOModel(sharedFastVLM: fastVLM, sharedTokenizer: tokenizer, modelDirectory: modelDirectory)
             let understandModel = ImageUnderstandingModel(container: container)
@@ -210,6 +255,7 @@ struct ContentView: View {
             async let u: Void = understandModel.load()
             async let c: Void = chatModel.load()
             _ = await (g, u, c)
+            await MainActor.run { loadingStage = "" }
 
             viewModel.generationModel = generateModel
             viewModel.understandingModel = understandModel

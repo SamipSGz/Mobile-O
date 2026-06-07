@@ -35,6 +35,29 @@ final class ModelDownloadManager: NSObject {
     private(set) var modelsReady = false
 
     /// Check the filesystem for all required model files.
+    /// Remove monolithic compiled models that are too large to load on iPhone.
+    /// Clears download progress so the app re-downloads the correct split variants.
+    private func migrateToSplitModels() {
+        let fm = FileManager.default
+        let dir = modelsDirectory
+        let oldModels = ["transformer", "vae_decoder"]
+        var didMigrate = false
+        for name in oldModels {
+            let compiled = dir.appendingPathComponent("\(name).mlmodelc")
+            if fm.fileExists(atPath: compiled.path) {
+                try? fm.removeItem(at: compiled)
+                didMigrate = true
+            }
+        }
+        // If we removed old models, reset download progress so the app
+        // shows the download screen for the correct split model files.
+        if didMigrate {
+            try? fm.removeItem(at: progressFilePath)
+            try? fm.removeItem(at: resumeDataPath)
+            currentFileIndex = 0
+        }
+    }
+
     func checkModelsReady() {
         let fm = FileManager.default
         let dir = modelsDirectory
@@ -57,7 +80,17 @@ final class ModelDownloadManager: NSObject {
 
     private static let repo = "Amshaker/Mobile-O-0.5B-iOS"
     private static let baseURL = "https://huggingface.co/\(repo)/resolve/main"
-    static let coreMLComponents = ["connector", "transformer", "vae_decoder", "vision_encoder"]
+    // Use ANE-split transformer + VAE — the monolithic versions (2.2GB each)
+    // exceed iPhone memory when loaded simultaneously. The split variants
+    // (~550-600MB each) load and run reliably on ANE.
+    static let coreMLComponents = [
+        "connector",
+        "transformer_ane_p1_0.5",
+        "transformer_ane_p2_0.5",
+        "vae_ane_p1_0.5",
+        "vae_ane_p2_0.5",
+        "vision_encoder"
+    ]
 
     /// Each downloadable file: (relative path inside the repo, relative destination on disk).
     private static let fileManifest: [(remotePath: String, localPath: String, component: String)] = {
@@ -122,9 +155,94 @@ final class ModelDownloadManager: NSObject {
         config.allowsCellularAccess = true
         self.session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
 
+        // Migrate: remove old monolithic compiled models that exceed iPhone memory
+        migrateToSplitModels()
+
         // Restore progress if we were mid-download
         restoreProgress()
         checkModelsReady()
+    }
+
+    /// Returns true if ALL required models are bundled in the app (no download needed).
+    func allModelsBundled() -> Bool {
+        let fm = FileManager.default
+        let llmReady = Bundle.main.url(forResource: "llm", withExtension: nil)
+            .map { fm.fileExists(atPath: $0.appendingPathComponent("model.safetensors").path) } ?? false
+        let coreMLReady = Self.coreMLComponents.allSatisfy {
+            Bundle.main.url(forResource: $0, withExtension: "mlpackage") != nil
+        }
+        return coreMLReady && llmReady
+    }
+
+    /// Copy bundled .mlpackage + LLM files into Application Support, then compile.
+    /// Called on init when bundled models are detected — skips network download entirely.
+    func compileBundledModels() {
+        Task { @MainActor in
+            state = .compiling
+            let fm = FileManager.default
+            let dir = modelsDirectory
+
+            // 1. Copy LLM files from bundle
+            let llmDir = dir.appendingPathComponent("llm")
+            if !fm.fileExists(atPath: llmDir.appendingPathComponent("model.safetensors").path),
+               let bundleLLM = Bundle.main.url(forResource: "llm", withExtension: nil) {
+                try? fm.createDirectory(at: llmDir, withIntermediateDirectories: true)
+                if let contents = try? fm.contentsOfDirectory(at: bundleLLM,
+                                                               includingPropertiesForKeys: nil) {
+                    for file in contents {
+                        let dest = llmDir.appendingPathComponent(file.lastPathComponent)
+                        if !fm.fileExists(atPath: dest.path) {
+                            try? fm.copyItem(at: file, to: dest)
+                        }
+                    }
+                }
+            }
+
+            // 2. Copy + compile each CoreML component
+            for (index, name) in Self.coreMLComponents.enumerated() {
+                let compiledURL = dir.appendingPathComponent("\(name).mlmodelc")
+                if fm.fileExists(atPath: compiledURL.path) {
+                    completedComponents.insert("\(name)_compiled")
+                    continue
+                }
+
+                compilationProgress = "Compiling \(name) (\(index + 1)/\(Self.coreMLComponents.count))..."
+
+                guard let bundlePkg = Bundle.main.url(forResource: name, withExtension: "mlpackage") else {
+                    state = .failed("Bundled model '\(name)' not found.")
+                    return
+                }
+
+                // Copy .mlpackage to Application Support
+                let destPkg = dir.appendingPathComponent("\(name).mlpackage")
+                if !fm.fileExists(atPath: destPkg.path) {
+                    do {
+                        try fm.copyItem(at: bundlePkg, to: destPkg)
+                    } catch {
+                        state = .failed("Failed to copy \(name): \(error.localizedDescription)")
+                        return
+                    }
+                }
+
+                // Compile
+                do {
+                    let tempURL = try await Task.detached(priority: .userInitiated) {
+                        try MLModel.compileModel(at: destPkg)
+                    }.value
+                    try? fm.removeItem(at: compiledURL)
+                    try fm.moveItem(at: tempURL, to: compiledURL)
+                    try? fm.removeItem(at: destPkg)
+                    completedComponents.insert("\(name)_compiled")
+                } catch {
+                    state = .failed("Failed to compile \(name): \(error.localizedDescription)")
+                    return
+                }
+            }
+
+            compilationProgress = ""
+            state = .completed
+            modelsReady = true
+        }
     }
 
     // MARK: - Public Actions

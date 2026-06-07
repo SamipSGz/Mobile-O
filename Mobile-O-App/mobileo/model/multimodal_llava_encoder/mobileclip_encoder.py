@@ -59,11 +59,8 @@ class MobileCLIPVisionTower(nn.Module):
     def feature_select(self, image_forward_outs):
         # Features from penultimate layer
         image_features = image_forward_outs["image_embeddings"]
-
-        # Reshape 4D tensor to 3D
-        B, C, H, W = image_features.shape
-        image_features = image_features.reshape(B, C, H*W)
-        image_features = image_features.transpose(1, 2)
+        # flatten(2) instead of reshape(B,C,H*W) — static op, CoreML/ANE compatible
+        image_features = image_features.flatten(2).transpose(1, 2)
         return image_features
 
     def forward(self, images):

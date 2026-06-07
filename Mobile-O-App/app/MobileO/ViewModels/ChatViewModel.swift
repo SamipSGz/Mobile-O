@@ -142,6 +142,13 @@ class ChatViewModel {
                     role: .assistant, content: .image(generatedImage),
                     totalTime: model.inferenceTime
                 )
+            } else {
+                // Show the error from modelInfo so user can see what failed
+                let errorInfo = model.modelInfo
+                _ = conversation.addMessage(
+                    role: .assistant,
+                    content: .text("Generation failed: \(errorInfo.isEmpty ? "unknown error" : errorInfo)")
+                )
             }
             conversation.isGenerating = false
         }
