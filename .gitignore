@@ -44,6 +44,10 @@ predictions/mobileo_*.png
 !predictions/stages/summary_*.png
 !predictions/*.json
 
+# ── Private paper draft (not for public repo) ────────────────────────────────
+mobileo_hardware_aware_report.md
+mobileo_experiment_report.docx
+
 # ── Temp / logs ──────────────────────────────────────────────────────────────
 *.log
 /tmp_*
