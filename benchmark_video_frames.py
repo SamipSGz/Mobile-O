@@ -20,6 +20,7 @@ on separate silicon and the throughput improves accordingly.
 import argparse
 import asyncio
 import json
+import re
 import statistics
 import time
 import warnings
@@ -62,6 +63,80 @@ p.add_argument("--warmup",      type=int, default=2,
                help="Warmup frames (not counted in timing)")
 p.add_argument("--out_json",    default="predictions/video_frames_throughput.json")
 args = p.parse_args()
+
+FRAME_KEYWORDS = {
+    "assets/cute_cat.png": ["cat", "kitten", "feline", "whisker"],
+    "assets/funny_image.jpeg": ["dog", "shiba", "meme"],
+    "assets/mobile-o-teaser.jpg": [
+        "text-to-image", "generation", "diagram", "prompt", "mobile",
+        "rainforest", "parrot", "visual", "comparison",
+    ],
+    "assets/mobile-o-qualitative.jpg": [
+        "prompt", "response", "question", "text", "generated",
+        "qualitative", "comparison", "topic",
+    ],
+    "assets/training_figure.jpg": [
+        "diagram", "flowchart", "architecture", "training", "loss", "model",
+        "language", "vae", "autoencoder", "projector", "encoder",
+    ],
+}
+
+STOPWORDS = set(
+    (
+        "a an the is are was were be been being am i it its this that these those "
+        "of on in at to for with by from has have had does do did did not no yes "
+        "and or but if then so than as"
+    ).split()
+)
+
+
+def words(s):
+    return [t.lower() for t in re.findall(r"[a-zA-Z][a-zA-Z']+", s)]
+
+
+def content_words(s):
+    return [w for w in words(s) if w not in STOPWORDS]
+
+
+def contains_any(text, keywords):
+    t = text.lower()
+    return any(k.lower() in t for k in keywords)
+
+
+def jaccard(a, b):
+    sa, sb = set(a), set(b)
+    if not sa and not sb:
+        return 1.0
+    return len(sa & sb) / len(sa | sb) if (sa | sb) else 0.0
+
+
+def lcs_len(a, b):
+    if not a or not b:
+        return 0
+    dp = [0] * (len(b) + 1)
+    for x in a:
+        prev = 0
+        for j, y in enumerate(b, 1):
+            old = dp[j]
+            if x == y:
+                dp[j] = prev + 1
+            else:
+                dp[j] = max(dp[j], dp[j - 1])
+            prev = old
+    return dp[-1]
+
+
+def rouge_l_f1(reference, candidate):
+    ref_words = content_words(reference)
+    cand_words = content_words(candidate)
+    if not ref_words or not cand_words:
+        return 0.0
+    lcs = lcs_len(ref_words, cand_words)
+    if lcs == 0:
+        return 0.0
+    precision = lcs / len(cand_words)
+    recall = lcs / len(ref_words)
+    return 2 * precision * recall / (precision + recall) if precision + recall else 0.0
 
 # ── Hardware ──────────────────────────────────────────────────────────────────
 sched = HardwareScheduler(coreml_vision_path=args.coreml_path, gguf_llm_path=args.gguf_path)
@@ -339,6 +414,83 @@ for name, _ in configs:
           f"{r['frames_per_sec']:>6.2f}/s {sp_tps:>7.2f}×")
 print("=" * 78)
 
+
+# ── Qualitative summary over measured frames ─────────────────────────────────
+def measured_frames(config_name):
+    return [s for s in all_results[config_name]["frames"] if not s["warmup"]]
+
+
+qualitative = {}
+for name, _ in configs:
+    rows = measured_frames(name)
+    details = []
+    hits = 0
+    for s in rows:
+        frame_path = args.frames[s["frame"]]
+        expected_keywords = FRAME_KEYWORDS.get(frame_path, [])
+        keyword_hit = contains_any(s["answer"], expected_keywords)
+        hits += int(keyword_hit)
+        details.append({
+            "frame": s["frame"],
+            "image": frame_path,
+            "keyword_hit": keyword_hit,
+            "expected_keywords": expected_keywords,
+        })
+    qualitative[name] = {
+        "keyword_hit_rate": hits / len(rows) if rows else 0,
+        "keyword_hits": hits,
+        "keyword_total": len(rows),
+        "keyword_details": details,
+    }
+
+baseline_name = configs[0][0]
+baseline_rows = measured_frames(baseline_name)
+for name, _ in configs[1:]:
+    rows = measured_frames(name)
+    exact_scores = []
+    jaccard_scores = []
+    rouge_scores = []
+    keyword_agreement = []
+    for base_row, row in zip(baseline_rows, rows):
+        frame_path = args.frames[base_row["frame"]]
+        expected_keywords = FRAME_KEYWORDS.get(frame_path, [])
+        exact_scores.append(base_row["answer"].strip().lower() == row["answer"].strip().lower())
+        jaccard_scores.append(jaccard(content_words(base_row["answer"]), content_words(row["answer"])))
+        rouge_scores.append(rouge_l_f1(base_row["answer"], row["answer"]))
+        keyword_agreement.append(
+            contains_any(base_row["answer"], expected_keywords) ==
+            contains_any(row["answer"], expected_keywords)
+        )
+    qualitative[f"{name}_vs_{baseline_name}"] = {
+        "exact_match_rate": sum(exact_scores) / len(exact_scores) if exact_scores else 0,
+        "jaccard_mean": statistics.mean(jaccard_scores) if jaccard_scores else 0,
+        "jaccard_median": statistics.median(jaccard_scores) if jaccard_scores else 0,
+        "rouge_l_mean": statistics.mean(rouge_scores) if rouge_scores else 0,
+        "rouge_l_median": statistics.median(rouge_scores) if rouge_scores else 0,
+        "keyword_hit_agreement": (
+            sum(keyword_agreement) / len(keyword_agreement) if keyword_agreement else 0
+        ),
+    }
+
+print("\n" + "=" * 78)
+print("  QUALITATIVE — Measured video frames only")
+print("=" * 78)
+print(f"  {'Config':<32} {'KW-hit':>9}")
+print("-" * 78)
+for name, _ in configs:
+    q = qualitative[name]
+    print(f"  {name:<32} {q['keyword_hits']:>2}/{q['keyword_total']:<2} "
+          f"({q['keyword_hit_rate']*100:>5.1f}%)")
+print("-" * 78)
+print(f"  {'Comparison':<45} {'Exact':>7} {'Jaccard':>9} {'ROUGE-L':>9} {'KW agree':>9}")
+for name, _ in configs[1:]:
+    key = f"{name}_vs_{baseline_name}"
+    q = qualitative[key]
+    print(f"  {key:<45} {q['exact_match_rate']*100:>5.1f}% "
+          f"{q['jaccard_mean']:>8.3f} {q['rouge_l_mean']:>8.3f} "
+          f"{q['keyword_hit_agreement']*100:>8.1f}%")
+print("=" * 78)
+
 # Save JSON
 from pathlib import Path
 Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
@@ -350,5 +502,7 @@ with open(args.out_json, "w") as f:
         "warmup":         args.warmup,
         "max_tokens":     args.max_tokens,
         "results":        all_results,
+        "frame_keywords": FRAME_KEYWORDS,
+        "qualitative":    qualitative,
     }, f, indent=2)
 print(f"\nSaved JSON: {args.out_json}\n")

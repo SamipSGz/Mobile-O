@@ -29,6 +29,7 @@ struct ContentView: View {
     @State private var sharedContainer: ModelContainer?
     @State private var sharedFastVLM: FastVLM?
     @State private var sharedTokenizer: Tokenizer?
+    @State private var benchmarkRunner: BenchmarkRunner?
 
     // MARK: - UI State
 
@@ -140,7 +141,7 @@ struct ContentView: View {
                 }
 
                 if let generationModel = viewModel.generationModel {
-                    NavigationLink(destination: SettingsView(model: generationModel, settings: settingsViewModel)) {
+                    NavigationLink(destination: SettingsView(model: generationModel, settings: settingsViewModel, benchmarkRunner: benchmarkRunner)) {
                         Image(systemName: "gearshape.fill").imageScale(.large)
                     }
                 }
@@ -240,6 +241,13 @@ struct ContentView: View {
             sharedContainer = container
             sharedFastVLM = fastVLM
             sharedTokenizer = tokenizer
+
+            // Create benchmark runner that can reach into FastVLM + container
+            benchmarkRunner = BenchmarkRunner(
+                modelDirectory: modelDirectory,
+                container: container,
+                fastVLM: fastVLM
+            )
 
             await MainActor.run { loadingStage = "Warming up vision encoder..." }
             // Warmup on a background thread to avoid blocking the UI

@@ -4,12 +4,39 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var model: MobileOModel
     @Bindable var settings: SettingsViewModel
+    var benchmarkRunner: BenchmarkRunner?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 // ── Hardware-aware status ─────────────────────────────────
                 HardwareStatusSection()
+
+                // ── Benchmark link ───────────────────────────────────────
+                if let runner = benchmarkRunner {
+                    NavigationLink(destination: BenchmarkView(runner: runner)) {
+                        HStack {
+                            Image(systemName: "speedometer")
+                                .foregroundStyle(.purple)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Run Hardware Benchmark")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.primary)
+                                Text("A/B/C compute-unit comparison — 24 queries × 3 configs")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(14)
+                        .background(.regularMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 // ── Per-stage timing + Mac comparison ────────────────────
                 if let timing = model.lastTiming {

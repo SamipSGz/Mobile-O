@@ -16,6 +16,7 @@ Aggregate per config (averaged over all image/prompt pairs):
   - mean/median latency
   - mean/median tokens/sec
   - POPE-style hallucination accuracy (yes/no questions with known answers)
+  - open-description keyword hit rate
   - cross-config output agreement (vs Config A baseline):
       * exact match
       * Jaccard similarity on words
@@ -50,15 +51,30 @@ p.add_argument("--out_json",    default="predictions/understanding_full_eval.jso
 args = p.parse_args()
 
 # ── Test corpus: images + prompts with ground truth ───────────────────────────
-# Open-ended descriptions (no ground truth, used for cross-config agreement)
+# Open-ended descriptions, used for keyword hit rate and cross-config agreement.
 DESCRIBE_PROMPTS = [
     "What is in the image?",
     "Describe the image in one short sentence.",
     "What do you see?",
 ]
 
-# POPE-style binary questions (have known yes/no ground truth)
-# Format: (image_path, question, expected_yes_or_no, "open-ground-truth-keywords")
+DESCRIBE_KEYWORDS = {
+    "assets/cute_cat.png": ["cat", "kitten", "feline", "whisker"],
+    "assets/funny_image.jpeg": ["dog", "shiba", "meme"],
+    "assets/app_settings.jpg": ["settings", "screen", "interface", "smartphone"],
+    "assets/mobile-o-teaser.jpg": [
+        "text-to-image", "generation", "mobile-o", "mobile", "speed", "memory",
+        "rainforest", "mountain", "coral", "tomato", "comparison",
+    ],
+    "assets/training_figure.jpg": [
+        "diagram", "flowchart", "architecture", "training", "loss", "model",
+        "language", "vae", "autoencoder",
+    ],
+}
+
+# POPE-style binary probes. Rows with expected_yes_or_no=None are unlabeled
+# sanity probes and are excluded from POPE accuracy/recall.
+# Format: (image_path, question, expected_yes_or_no, object_keywords)
 POPE_QUERIES = [
     # cute_cat.png — has a cat (orange tabby)
     ("assets/cute_cat.png", "Is there a cat in the image?",       "yes", ["cat", "kitten", "feline"]),
@@ -278,7 +294,8 @@ queries = []
 for img in DESCRIBE_IMAGES:
     for prompt_text in DESCRIBE_PROMPTS:
         queries.append({"type": "describe", "image": img, "prompt": prompt_text,
-                        "expected_yn": None, "expected_keywords": None})
+                        "expected_yn": None,
+                        "expected_keywords": DESCRIBE_KEYWORDS[img]})
 for img, prompt_text, expected_yn, kw in POPE_QUERIES:
     queries.append({"type": "pope", "image": img, "prompt": prompt_text,
                     "expected_yn": expected_yn, "expected_keywords": kw})
@@ -365,7 +382,7 @@ for cfg in ["A", "B", "C"]:
                 pope_no_total += 1
                 if correct: pope_no_correct += 1
 
-        if r["expected_keywords"]:
+        if r["type"] == "describe" and r["expected_keywords"]:
             keyword_total += 1
             if contains_any(r["answer"], r["expected_keywords"]):
                 keyword_hits += 1
@@ -428,7 +445,7 @@ for cfg in ["A", "B", "C"]:
 print("=" * 80)
 
 print("\n\n" + "=" * 80)
-print("  QUALITATIVE — POPE-style hallucination check")
+print("  QUALITATIVE — POPE + open-description keyword check")
 print("=" * 80)
 print(f"  {'Config':<35} {'Acc':>7} {'Yes-rec':>9} {'No-rec':>9} {'KW-hit':>9}")
 print("-" * 80)
@@ -439,8 +456,8 @@ for cfg in ["A", "B", "C"]:
           f"{qq['pope_no_recall']*100:>7.1f}% "
           f"{qq['keyword_hit_rate']*100:>7.1f}%")
 print("=" * 80)
-print(f"  POPE total questions per config: {qual_summary['A']['pope_total']}")
-print(f"  Keyword-tagged questions per config: {qual_summary['A']['keyword_total']}")
+print(f"  Labeled POPE questions per config: {qual_summary['A']['pope_total']}")
+print(f"  Open-description keyword prompts per config: {qual_summary['A']['keyword_total']}")
 
 print("\n\n" + "=" * 80)
 print("  QUALITATIVE — Cross-config output agreement (vs Config A baseline)")
@@ -464,6 +481,7 @@ with open(args.out_json, "w") as f:
         "max_tokens": args.max_tokens,
         "describe_prompts": DESCRIBE_PROMPTS,
         "describe_images": DESCRIBE_IMAGES,
+        "describe_keywords": DESCRIBE_KEYWORDS,
         "pope_queries": [{"image": i, "prompt": p, "expected_yn": e,
                           "expected_keywords": k}
                          for i, p, e, k in POPE_QUERIES],

@@ -246,7 +246,7 @@ private enum Vision {
                                  userInfo: [NSLocalizedDescriptionKey: "Vision encoder URL not set"])
                 }
                 let config = MLModelConfiguration()
-                config.computeUnits = .all
+                config.computeUnits = FastVLM.benchmarkVisionComputeUnits
                 let model = try MLModel(contentsOf: url, configuration: config)
                 _model = model
                 // Detect output key
@@ -494,6 +494,7 @@ public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
     /// Custom model directory set externally (e.g. Application Support/Models/llm/).
     /// When set, `modelConfiguration` uses this instead of the app bundle.
     static public var customModelDirectory: URL?
+    static public var benchmarkVisionComputeUnits: MLComputeUnits = .all
 
     static public var modelConfiguration: ModelConfiguration {
         if let customDir = customModelDirectory {
@@ -668,8 +669,12 @@ public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
         // and loading it synchronously during weight sanitization blocks iPhone
         // startup. Load it lazily on first image inference instead.
         if let customDir = FastVLM.customModelDirectory {
-            let visionURL = customDir.deletingLastPathComponent()
+            let flatBundleVisionURL = customDir.appendingPathComponent("vision_encoder.mlmodelc")
+            let downloadedVisionURL = customDir.deletingLastPathComponent()
                 .appendingPathComponent("vision_encoder.mlmodelc")
+            let visionURL = FileManager.default.fileExists(atPath: flatBundleVisionURL.path)
+                ? flatBundleVisionURL
+                : downloadedVisionURL
             visionModel.model.setModelURL(visionURL)
         }
         return weights
