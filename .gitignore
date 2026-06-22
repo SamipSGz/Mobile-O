@@ -1,0 +1,70 @@
+# ── Large model weights / artifacts (not for git) ────────────────────────────
+checkpoints/
+llm_export/
+*.mlpackage/
+*.mlmodelc/
+Mobile-O-App/exported_models/
+Mobile-O-App/app/MobileO/Resources/llm/
+Mobile-O-App/app/MobileO/Resources/connector.mlpackage/
+Mobile-O-App/app/MobileO/Resources/transformer*.mlpackage/
+Mobile-O-App/app/MobileO/Resources/vae*.mlpackage/
+Mobile-O-App/app/MobileO/Resources/vision_encoder.mlpackage/
+
+# ── Installers / binaries accidentally dropped in repo ───────────────────────
+Anaconda3-*.sh
+*.dmg
+*.pkg
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# ── Xcode / Swift ────────────────────────────────────────────────────────────
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.xccheckout
+*.moved-aside
+*.hmap
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+._*
+
+# ── Intermediate predictions are kept but large raw outputs aren't ───────────
+predictions/stages/*_output.png
+predictions/mobileo_*.png
+!predictions/stages/*_card.png
+!predictions/stages/summary_*.png
+!predictions/*.json
+
+# ── Private paper draft (not for public repo) ────────────────────────────────
+mobileo_hardware_aware_report.md
+mobileo_experiment_report.docx
+
+# ── Temp / logs ──────────────────────────────────────────────────────────────
+*.log
+/tmp_*
+*.err
+*.out
+*.pptx
+cuda_async_pipeline/predictions
+cuda_async_pipeline/profiler_traces
+logs
+experiments/junk
+experiments/docs
+experiments/exp12_frames
+*.jpg
+*.png
+*.jsonl
+exp*.py
+*mp4
+CLAUDE.md
+*.csv
+*.json
