@@ -68,3 +68,6 @@ exp*.py
 CLAUDE.md
 *.csv
 *.json
+# secrets / local env
+.env
+*.env
