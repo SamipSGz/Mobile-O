@@ -71,3 +71,7 @@ CLAUDE.md
 # secrets / local env
 .env
 *.env
+
+# ── proactive-inference: run outputs + downloaded benchmark videos ───────────
+experiments/proactive-inference/results/
+experiments/proactive-inference/data/youcook2/videos

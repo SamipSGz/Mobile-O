@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# proactive_system.py — default configuration.
+# CLI flags override these values; these override the built-in defaults.
+# Run a different file with:  python proactive_system.py --config my.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+
+# What to run -----------------------------------------------------------------
+mode: both              # caption | vqa | both
+input_mode: adaptive    # how the orchestrator decides which frames to keep:
+                        #   adaptive : keep if a frame's keep-probability beats the
+                        #              model's OWN running average  (no threshold — recommended)
+                        #   probe    : keep if p_yes > p_no  (absolute, very selective)
+                        #   even     : keep every frame  (baseline)
+                        #   novelty  : keep if cosine-to-last < delta  (old rule-based reference)
+output_gate: on         # on  = model decides when to emit a caption (proactive output)
+                        # off = emit a caption on every kept frame (stream-all)
+
+# Input / streaming -----------------------------------------------------------
+video: null             # null -> built-in demo video (run.DEFAULT_VIDEO)
+gt: null                # null -> built-in caption reference (run.DEFAULT_GT, for METEOR)
+base_interval: 2.5      # seconds between arriving frames
+cap: 40                 # max frames admitted into the shared-KV memory
+chunk: 4                # frames per motion clip (1 = single still image)
+chunk_dt: 0.4           # seconds between frames within one clip
+
+# Video QA --------------------------------------------------------------------
+questions: null         # "Q1|Q2|Q3"  (null -> built-in demo questions)
+
+# Generation ------------------------------------------------------------------
+temp: 0.7               # caption / think temperature
+qa_temp: 0.3            # QA temperature
+seed: 0
+
+# novelty mode only -----------------------------------------------------------
+delta: null             # null -> backend default (run.DELTA)
+
+# Output ----------------------------------------------------------------------
+out: null               # null -> results/run.json
